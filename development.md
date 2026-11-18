@@ -58,7 +58,7 @@ Upstream project: https://github.com/civilkit/civilkit-calcs
 - [x] Validate scalar and quantity round trips against Calcpad (basic 5 m binding integration test).
 - [ ] Validate vector/matrix and complex result conversion.
 - [ ] Validate parser diagnostics and source-line mapping.
-- [ ] Validate native and WASM behavior.
+- [x] Validate native and WASM compilation.
 
 ### M2 — Jabr-Math integration
 - Connect the adapter's MathAnalysisProvider to the real Jabr-Math public facade.
@@ -85,7 +85,9 @@ Upstream project: https://github.com/civilkit/civilkit-calcs
 
 ## Build and test
 
-The selected project MSRV remains Rust 1.75 to match Jabr Kernel. CivilKit APIs newer than 1.75 are adapted in the vendored source under D-001; do not raise the MSRV or remove these compatibility shims without an explicit architecture review.
+The selected project MSRV remains Rust 1.75 to match Jabr Kernel. CivilKit APIs newer than 1.75 are adapted in the vendored source under D-001. CI verifies the Rust 1.75 build, stable tests/Clippy, WASM compilation, and the vendored Calcpad core unit tests. Do not raise the MSRV or remove these compatibility shims without an explicit architecture review.
+
+Engine Core's BindingTable stores only symbol-to-producer references. It does not store variable values, snapshots, or history; those remain Kernel-owned. The Kernel public API dependency is intentionally deferred until the versioned public-contract crate/tag is available.
 
 Run:
 
