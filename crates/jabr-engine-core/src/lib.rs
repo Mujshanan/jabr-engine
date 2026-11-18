@@ -72,6 +72,7 @@ pub enum AnalysisOutcome {
     Failed(Vec<Diagnostic>),
 }
 
+/// Analysis exports each distinct name once; its span points to the final defining assignment.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BlockAnalysis {
     pub definitions: Vec<Definition>,
