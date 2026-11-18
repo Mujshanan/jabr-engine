@@ -23,3 +23,22 @@ jobs:
         run: cargo test -p jabr-engine-core -p jabr-engine-adapter-math
       - name: Clippy
         run: cargo clippy -p jabr-engine-core -p jabr-engine-adapter-math --all-targets -- -D warnings
+
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.75.0
+      - name: Check declared MSRV
+        run: cargo check -p jabr-engine-core -p jabr-engine-adapter-math
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Check math adapter for WASM
+        run: cargo check -p jabr-engine-adapter-math --target wasm32-unknown-unknown
