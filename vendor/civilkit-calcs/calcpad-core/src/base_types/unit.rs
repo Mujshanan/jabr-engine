@@ -169,35 +169,14 @@ impl Unit {
             n: n as u8,
             pid: NEXT_POWERS_ID.fetch_add(1, Ordering::Relaxed),
             pw: [0f32; MAX_DIMS],
-            fc: [const { Cell::new(0.0) }; MAX_DIMS],
+            fc: std::array::from_fn(|_| Cell::new(0.0)),
         }
     }
 
-    /// `blank` made directly in its `Rc` block. A unit is 160 bytes; building it in a local and
-    /// moving it into the block costs a copy, which in the browser build is a slow bulk-memory
-    /// call, and unit results are made by the million.
+    /// Allocate a shared blank unit using only APIs available at the crate MSRV.
     #[inline]
     fn blank_rc(n: usize, temp_char: char) -> Rc<Unit> {
-        debug_assert!(n <= MAX_DIMS);
-        let mut rc = Rc::<Unit>::new_uninit();
-        let p = Rc::get_mut(&mut rc).expect("a new Rc is unique").as_mut_ptr();
-        // SAFETY: every field of the unit is written before `assume_init`; `Cell<f64>` has
-        // the layout of `f64`.
-        unsafe {
-            std::ptr::addr_of_mut!((*p).text).write(RefCell::new(None));
-            std::ptr::addr_of_mut!((*p).temp_char).write(Cell::new(temp_char));
-            std::ptr::addr_of_mut!((*p).n).write(n as u8);
-            std::ptr::addr_of_mut!((*p).pid).write(NEXT_POWERS_ID.fetch_add(1, Ordering::Relaxed));
-            let pw = std::ptr::addr_of_mut!((*p).pw) as *mut f32;
-            let fc = std::ptr::addr_of_mut!((*p).fc) as *mut f64;
-            // Volatile stores: plain ones are merged into a bulk fill, a slow call in the
-            // browser build for 36 and 72 bytes.
-            for i in 0..MAX_DIMS {
-                pw.add(i).write_volatile(0.0);
-                fc.add(i).write_volatile(0.0);
-            }
-            rc.assume_init()
-        }
+        Rc::new(Unit::blank(n, temp_char))
     }
 
     fn from_parts(powers: &[f32], factors: &[f64], temp_char: char) -> Unit {
@@ -1230,7 +1209,7 @@ fn get_power(factor: f64) -> i32 {
 }
 
 fn near_int(a: f64) -> bool {
-    (a - a.round_ties_even()).abs() < 1e-12
+    (a - crate::extension_methods::round_ties_even(a)).abs() < 1e-12
 }
 
 fn norm_dim(factor: f64, name: &str) -> f64 {
@@ -1253,7 +1232,7 @@ fn norm_dim(factor: f64, name: &str) -> f64 {
                 if a2 < 1.0 {
                     let a3 = 1.0 / a2;
                     if near_int(a3) {
-                        let a3 = a3.round_ties_even();
+                        let a3 = crate::extension_methods::round_ties_even(a3);
                         if a3 == 7000.0 || a3 == 256.0 || a3 == 16.0 {
                             return 1.0;
                         } else {
@@ -1261,7 +1240,7 @@ fn norm_dim(factor: f64, name: &str) -> f64 {
                         }
                     }
                 } else if near_int(a2) {
-                    let a2 = a2.round_ties_even();
+                    let a2 = crate::extension_methods::round_ties_even(a2);
                     if [14.0, 28.0, 100.0, 112.0, 1000.0, 2000.0, 2240.0].contains(&a2) {
                         return 1.0;
                     } else {
