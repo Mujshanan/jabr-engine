@@ -22,7 +22,7 @@ The initial workspace and Calcpad source import are present on the development b
 - [SPECIFICATIONS.md](SPECIFICATIONS.md) — normative architecture and protocol requirements.
 - [DEVIATIONS.md](DEVIATIONS.md) — every Jabr-specific modification to vendored upstream code.
 
-CivilKit's calcpad-core is source-vendored at the pinned revision documented in DEVIATIONS.md. The Math adapter now builds an isolated ExpressionParser context, disables file access, injects bound inputs as synthetic assignments, and extracts only outputs declared by Jabr-Math analysis. CI compilation and runtime conformance are the next validation gates.
+CivilKit's calcpad-core is source-vendored at the pinned revision documented in DEVIATIONS.md. The Math adapter builds an isolated ExpressionParser context, disables file access, injects bound inputs as synthetic assignments, and extracts only outputs declared by Jabr-Math analysis. The project retains Rust 1.75 through a documented, test-backed compatibility patch set in DEVIATIONS.md. Final MSRV and post-patch CI validation are in progress.
 
 ## Execution principles
 
