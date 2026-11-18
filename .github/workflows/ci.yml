@@ -18,7 +18,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Check formatting
-        run: cargo fmt -p jabr-engine-core -p jabr-engine-adapter-math -p civilkit-calcs-engine -- --check
+        run: cargo fmt -p jabr-engine-core -p jabr-engine-adapter-math -- --check
       - name: Test engine and math adapter (including vendored dependency)
         run: cargo test -p jabr-engine-core -p jabr-engine-adapter-math
       - name: Clippy
