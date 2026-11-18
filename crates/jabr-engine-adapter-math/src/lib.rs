@@ -404,6 +404,10 @@ mod tests {
             assert!(evaluation.diagnostics.is_empty());
             assert_eq!(evaluation.outputs.len(), 1);
             if let Some(output) = evaluation.outputs.first() {
+                assert!(matches!(
+                    &output.value,
+                    StructuredValue::ApproximateQuantity { .. }
+                ));
                 match &output.value {
                     StructuredValue::ApproximateQuantity {
                         magnitude,
@@ -414,7 +418,7 @@ mod tests {
                         assert_eq!(unit, "m");
                         assert_eq!(backend, "civilkit-calcpad");
                     }
-                    _ => assert!(false, "expected a quantity output"),
+                    _ => {},
                 }
             }
         }
