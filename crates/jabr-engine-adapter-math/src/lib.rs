@@ -256,14 +256,16 @@ fn convert_value(value: &Value) -> Result<StructuredValue, String> {
     match value {
         Value::Real(real) => Ok(convert_real(real)),
         Value::Complex(complex) => match &complex.units {
-            Some(unit) => Ok(StructuredValue::ComplexQuantity {
+            Some(unit) => Ok(StructuredValue::ApproximateComplexQuantity {
                 re: complex.a,
                 im: complex.b,
                 unit: unit.text(),
+                backend: "civilkit-calcpad".to_owned(),
             }),
-            None => Ok(StructuredValue::Complex {
+            None => Ok(StructuredValue::ApproximateComplex {
                 re: complex.a,
                 im: complex.b,
+                backend: "civilkit-calcpad".to_owned(),
             }),
         },
         Value::Vector(vector) => Ok(StructuredValue::Vector(
