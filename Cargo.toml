@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/jabr-engine-core",
     "crates/jabr-engine-adapter-math",
+    "vendor/civilkit-calcs/calcpad-core",
 ]
 
 [workspace.package]
