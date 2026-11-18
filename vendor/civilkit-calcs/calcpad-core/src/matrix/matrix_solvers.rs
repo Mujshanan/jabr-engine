@@ -840,7 +840,7 @@ impl Matrix {
         }
         let (_, sig, _) = self.get_svd()?;
         let sig_max = sig.max()?.d;
-        let eps = sig_max.next_up() - sig_max;
+        let eps = crate::extension_methods::next_up(sig_max) - sig_max;
         let mut rank = 0;
         for i in 0..sig.len() {
             if sig.get(i).d.abs() > eps {
