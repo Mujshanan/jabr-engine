@@ -112,7 +112,7 @@ pub fn map_authored_span(source: &GeneratedSource, generated: SourceSpan) -> Opt
             generated_start,
             generated_end,
         } if start >= *generated_start && end <= *generated_end && start <= end => {
-            let mapped_start = original_start + (start - generated_start);
+            let mapped_start = *original_start + (start - *generated_start);
             let mapped_end = mapped_start + (end - start);
             (mapped_end <= *original_end).then_some(SourceSpan {
                 start: mapped_start as u32,
