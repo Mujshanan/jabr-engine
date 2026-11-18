@@ -369,4 +369,55 @@ mod tests {
         ));
         assert_eq!(result, Ok("x = 5 m".to_owned()));
     }
+
+    struct NoopAnalyzer;
+
+    impl MathAnalysisProvider for NoopAnalyzer {
+        fn analyze_math_block(&self, _source: &str) -> AnalysisOutcome {
+            AnalysisOutcome::Available(BlockAnalysis::default())
+        }
+    }
+
+    #[test]
+    fn evaluates_block_with_injected_quantity_and_extracts_declared_output() {
+        let adapter = CalcpadMathAdapter::new(NoopAnalyzer);
+        let analysis = BlockAnalysis {
+            definitions: vec![jabr_engine_core::Definition {
+                name: "y".to_owned(),
+                span: SourceSpan { start: 0, end: 1 },
+            }],
+            references: vec![jabr_engine_core::Reference {
+                name: "x".to_owned(),
+                span: SourceSpan { start: 4, end: 5 },
+            }],
+        };
+        let inputs = [input(
+            "x",
+            StructuredValue::Quantity {
+                magnitude: 5.0,
+                unit: "m".to_owned(),
+            },
+        )];
+        let evaluated = adapter.evaluate("y = x * 2", &analysis, &inputs);
+        assert!(evaluated.is_ok());
+        if let Ok(evaluation) = evaluated {
+            assert!(evaluation.diagnostics.is_empty());
+            assert_eq!(evaluation.outputs.len(), 1);
+            if let Some(output) = evaluation.outputs.first() {
+                match &output.value {
+                    StructuredValue::ApproximateQuantity {
+                        magnitude,
+                        unit,
+                        backend,
+                    } => {
+                        assert!((*magnitude - 10.0).abs() < 1e-9);
+                        assert_eq!(unit, "m");
+                        assert_eq!(backend, "civilkit-calcpad");
+                    }
+                    _ => assert!(false, "expected a quantity output"),
+                }
+            }
+        }
+    }
+
 }
