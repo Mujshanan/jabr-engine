@@ -47,14 +47,15 @@ Upstream project: https://github.com/civilkit/civilkit-calcs
 - [x] Rust workspace and first Engine Core crate.
 - [x] Math adapter source-injection and source-map scaffold.
 - [x] Pinned Calcpad core source import and license/provenance retention.
-- [ ] CI compilation and tests.
+- [x] Stable CI compilation, tests, and Clippy passed before the Rust 1.75 compatibility patch set; final rerun pending.
+- [x] Rust 1.75 compatibility patch set recorded as D-001 in DEVIATIONS.md; final MSRV rerun pending.
 
 ### M1 — Calcpad adapter validation
 - [x] Add isolated ExpressionParser evaluation context.
 - [x] Disable host file reads/writes for block evaluation.
 - [x] Inject resolved inputs as synthetic assignments.
 - [x] Extract declared outputs as structured values.
-- [ ] Validate scalar and quantity round trips against Calcpad.
+- [x] Validate scalar and quantity round trips against Calcpad (basic 5 m binding integration test).
 - [ ] Validate vector/matrix and complex result conversion.
 - [ ] Validate parser diagnostics and source-line mapping.
 - [ ] Validate native and WASM behavior.
@@ -83,6 +84,8 @@ Upstream project: https://github.com/civilkit/civilkit-calcs
 - Add cache identity only with session, revision, worksheet digest, Engine version, and adapter/backend versions.
 
 ## Build and test
+
+The selected project MSRV remains Rust 1.75 to match Jabr Kernel. CivilKit APIs newer than 1.75 are adapted in the vendored source under D-001; do not raise the MSRV or remove these compatibility shims without an explicit architecture review.
 
 Run:
 
