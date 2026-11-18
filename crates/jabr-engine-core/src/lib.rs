@@ -26,11 +26,28 @@ impl SourceSpan {
 #[derive(Clone, Debug, PartialEq)]
 pub enum StructuredValue {
     Real(f64),
-    ApproximateReal { value: f64, backend: String },
-    Complex { re: f64, im: f64 },
-    ComplexQuantity { re: f64, im: f64, unit: String },
-    Quantity { magnitude: f64, unit: String },
-    ApproximateQuantity { magnitude: f64, unit: String, backend: String },
+    ApproximateReal {
+        value: f64,
+        backend: String,
+    },
+    Complex {
+        re: f64,
+        im: f64,
+    },
+    ComplexQuantity {
+        re: f64,
+        im: f64,
+        unit: String,
+    },
+    Quantity {
+        magnitude: f64,
+        unit: String,
+    },
+    ApproximateQuantity {
+        magnitude: f64,
+        unit: String,
+        backend: String,
+    },
     Vector(Vec<StructuredValue>),
     Matrix(Vec<Vec<StructuredValue>>),
     Boolean(bool),
@@ -158,8 +175,10 @@ impl ExecutionEnvironment {
             }
         }
         for output in outputs {
-            self.definitions.insert(output.name.clone(), block_id.clone());
-            self.values.insert(output.name, (output.value, block_id.clone()));
+            self.definitions
+                .insert(output.name.clone(), block_id.clone());
+            self.values
+                .insert(output.name, (output.value, block_id.clone()));
         }
         Ok(())
     }
@@ -245,8 +264,14 @@ mod tests {
         let result = env.publish(
             BlockId("block-a".to_owned()),
             [
-                BlockOutput { name: "x".to_owned(), value: StructuredValue::Real(1.0) },
-                BlockOutput { name: "x".to_owned(), value: StructuredValue::Real(2.0) },
+                BlockOutput {
+                    name: "x".to_owned(),
+                    value: StructuredValue::Real(1.0),
+                },
+                BlockOutput {
+                    name: "x".to_owned(),
+                    value: StructuredValue::Real(2.0),
+                },
             ],
         );
         assert!(result.is_err());
