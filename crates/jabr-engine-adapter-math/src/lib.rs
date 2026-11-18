@@ -408,17 +408,15 @@ mod tests {
                     &output.value,
                     StructuredValue::ApproximateQuantity { .. }
                 ));
-                match &output.value {
-                    StructuredValue::ApproximateQuantity {
-                        magnitude,
-                        unit,
-                        backend,
-                    } => {
-                        assert!((*magnitude - 10.0).abs() < 1e-9);
-                        assert_eq!(unit, "m");
-                        assert_eq!(backend, "civilkit-calcpad");
-                    }
-                    _ => {}
+                if let StructuredValue::ApproximateQuantity {
+                    magnitude,
+                    unit,
+                    backend,
+                } = &output.value
+                {
+                    assert!((*magnitude - 10.0).abs() < 1e-9);
+                    assert_eq!(unit, "m");
+                    assert_eq!(backend, "civilkit-calcpad");
                 }
             }
         }
