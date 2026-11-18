@@ -17,12 +17,13 @@ It provides deterministic execution, cross-block binding, structured result stor
 - Scheduling and recalculation policy.
 - Aggregation and lifecycle of transient block results.
 - Cross-domain dependency coordination.
+- A symbol-to-producer binding table; it stores references to producers, not variable values.
 - Versioned request/response protocol and WASM/CLI integration.
 
 ### 2.2 Kernel owns
 - Generic identity and node IDs.
 - Generic graph, ports, edges, and topological/cycle primitives.
-- Generic revisions, snapshots, spans, diagnostics, and envelopes where defined by the versioned Kernel API.
+- Generic revisions, variable values/change tracking, snapshots/history, spans, diagnostics, and envelopes where defined by the versioned Kernel API.
 
 Engine depends on jabr-kernel-api, never Kernel implementation internals. Kernel must not depend on Math or Engine.
 
