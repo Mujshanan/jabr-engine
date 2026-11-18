@@ -1,9 +1,18 @@
-//! Math-domain adapter scaffolding.
+//! Math-domain adapter for the vendored CivilKit Calcpad calculation core.
 //!
-//! Calcpad parser integration is isolated behind this crate. The vendored source import is a
-//! prerequisite; no external Git dependency is used here.
+//! Jabr-Math remains the source of block analysis and stable authored spans. Calcpad receives
+//! an isolated source string with resolved inputs injected as synthetic assignments.
 
-use jabr_engine_core::{BlockInput, Diagnostic, SourceSpan, StructuredValue};
+use std::rc::Rc;
+
+use calcpad_core::base_types::real_value::RealValue;
+use calcpad_core::base_types::value::Value;
+use calcpad_core::data_files::NoFiles;
+use calcpad_core::parsers::expression_parser::ExpressionParser;
+use jabr_engine_core::{
+    AnalysisOutcome, BlockAnalysis, BlockEvaluation, BlockInput, BlockOutput, Diagnostic,
+    DomainAdapter, SourceSpan, StructuredValue,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SourceSegment {
@@ -26,6 +35,93 @@ pub struct GeneratedSource {
     pub segments: Vec<SourceSegment>,
 }
 
+/// Analysis implementation supplied by the Jabr-Math facade.
+pub trait MathAnalysisProvider {
+    fn analyze_math_block(&self, source: &str) -> AnalysisOutcome;
+}
+
+/// The Calcpad backend is replaceable. The analyzer is supplied by Jabr-Math.
+pub struct CalcpadMathAdapter<A> {
+    analyzer: A,
+}
+
+impl<A> CalcpadMathAdapter<A> {
+    pub fn new(analyzer: A) -> Self {
+        Self { analyzer }
+    }
+}
+
+impl<A: MathAnalysisProvider> DomainAdapter for CalcpadMathAdapter<A> {
+    fn analyze(&self, source: &str) -> AnalysisOutcome {
+        self.analyzer.analyze_math_block(source)
+    }
+
+    fn evaluate(
+        &self,
+        source: &str,
+        analysis: &BlockAnalysis,
+        inputs: &[BlockInput],
+    ) -> Result<BlockEvaluation, Vec<Diagnostic>> {
+        let generated = prepend_bindings(source, inputs)?;
+        let mut parser = ExpressionParser::new();
+
+        // A worksheet block is not allowed to read or write arbitrary host files.
+        parser.data_files = Rc::new(NoFiles);
+        parser.allow_data_write = false;
+        parser.debug = true;
+        parser.capture_values = true;
+
+        // ExpressionParser owns a fresh MathParser for this evaluation. No mutable Calcpad
+        // variable/function/unit state is shared between blocks or worker threads.
+        parser.parse(&generated.text, true);
+
+        let mut diagnostics = parser
+            .errors_list
+            .iter()
+            .map(|error| {
+                let generated_span = line_span(&generated.text, error.source_line);
+                let authored_span = generated_span
+                    .and_then(|span| map_authored_span(&generated, span));
+                Diagnostic {
+                    code: "JBR-MATH-CALCPAD-ERROR".to_owned(),
+                    message: error.message.clone(),
+                    span: authored_span,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let mut outputs = Vec::with_capacity(analysis.definitions.len());
+        for definition in &analysis.definitions {
+            match parser.variable(&definition.name) {
+                Some(value) => match convert_value(&value) {
+                    Ok(value) => outputs.push(BlockOutput {
+                        name: definition.name.clone(),
+                        value,
+                    }),
+                    Err(message) => diagnostics.push(Diagnostic {
+                        code: "JBR-MATH-UNSUPPORTED-RESULT".to_owned(),
+                        message: format!("{}: {}", definition.name, message),
+                        span: Some(definition.span),
+                    }),
+                },
+                None => diagnostics.push(Diagnostic {
+                    code: "JBR-MATH-MISSING-OUTPUT".to_owned(),
+                    message: format!(
+                        "Calcpad did not produce the declared output '{}'",
+                        definition.name
+                    ),
+                    span: Some(definition.span),
+                }),
+            }
+        }
+
+        Ok(BlockEvaluation {
+            outputs,
+            diagnostics,
+        })
+    }
+}
+
 /// Convert a structured Jabr input into a Calcpad assignment expression.
 /// Unsupported values are errors; arbitrary values are never stringified.
 pub fn format_binding(input: &BlockInput) -> Result<String, Diagnostic> {
@@ -38,13 +134,17 @@ pub fn format_binding(input: &BlockInput) -> Result<String, Diagnostic> {
     }
 
     let expression = match &input.value {
-        StructuredValue::Real(value) if value.is_finite() => value.to_string(),
-        StructuredValue::Quantity { magnitude, unit }
-            if magnitude.is_finite() && valid_unit(unit) =>
+        StructuredValue::Real(value) | StructuredValue::ApproximateReal { value, .. }
+            if value.is_finite() =>
         {
+            value.to_string()
+        }
+        StructuredValue::Quantity { magnitude, unit }
+        | StructuredValue::ApproximateQuantity {
+            magnitude, unit, ..
+        } if magnitude.is_finite() && valid_unit(unit) => {
             format!("{magnitude} {unit}")
         }
-        StructuredValue::Boolean(value) => value.to_string(),
         _ => {
             return Err(Diagnostic {
                 code: "JBR-MATH-UNSUPPORTED-BINDING-VALUE".to_owned(),
@@ -123,6 +223,66 @@ pub fn map_authored_span(source: &GeneratedSource, generated: SourceSpan) -> Opt
     })
 }
 
+fn line_span(source: &str, one_based_line: i32) -> Option<SourceSpan> {
+    if one_based_line <= 0 {
+        return None;
+    }
+    let mut offset = 0usize;
+    for (index, line) in source.split_inclusive('\n').enumerate() {
+        if index + 1 == one_based_line as usize {
+            let end = offset + line.trim_end_matches('\n').len();
+            return SourceSpan::new(offset as u32, end as u32);
+        }
+        offset += line.len();
+    }
+    None
+}
+
+fn convert_real(value: &RealValue) -> StructuredValue {
+    match &value.units {
+        Some(unit) => StructuredValue::ApproximateQuantity {
+            magnitude: value.d,
+            unit: unit.text(),
+            backend: "civilkit-calcpad".to_owned(),
+        },
+        None => StructuredValue::ApproximateReal {
+            value: value.d,
+            backend: "civilkit-calcpad".to_owned(),
+        },
+    }
+}
+
+fn convert_value(value: &Value) -> Result<StructuredValue, String> {
+    match value {
+        Value::Real(real) => Ok(convert_real(real)),
+        Value::Complex(complex) => match &complex.units {
+            Some(unit) => Ok(StructuredValue::ComplexQuantity {
+                re: complex.a,
+                im: complex.b,
+                unit: unit.text(),
+            }),
+            None => Ok(StructuredValue::Complex {
+                re: complex.a,
+                im: complex.b,
+            }),
+        },
+        Value::Vector(vector) => Ok(StructuredValue::Vector(
+            (0..vector.len())
+                .map(|index| convert_real(&vector.get(index)))
+                .collect(),
+        )),
+        Value::Matrix(matrix) => Ok(StructuredValue::Matrix(
+            (0..matrix.row_count())
+                .map(|row| {
+                    (0..matrix.col_count())
+                        .map(|column| convert_real(&matrix.get(row, column)))
+                        .collect()
+                })
+                .collect(),
+        )),
+    }
+}
+
 fn valid_identifier(name: &str) -> bool {
     let mut chars = name.chars();
     matches!(chars.next(), Some(c) if c == '_' || c.is_alphabetic())
@@ -198,5 +358,18 @@ mod tests {
             StructuredValue::Real(1.0),
         ));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn preserves_approximation_provenance_on_input() {
+        let result = format_binding(&input(
+            "x",
+            StructuredValue::ApproximateQuantity {
+                magnitude: 5.0,
+                unit: "m".to_owned(),
+                backend: "civilkit-calcpad".to_owned(),
+            },
+        ));
+        assert_eq!(result, Ok("x = 5 m".to_owned()));
     }
 }
