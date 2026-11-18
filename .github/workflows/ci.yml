@@ -42,3 +42,12 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: Check math adapter for WASM
         run: cargo check -p jabr-engine-adapter-math --target wasm32-unknown-unknown
+
+
+  upstream-calcpad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run vendored Calcpad core unit tests
+        run: cargo test -p civilkit-calcs-engine --lib
