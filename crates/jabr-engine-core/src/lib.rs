@@ -233,7 +233,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn later_blocks_reassign_existing_names_in_sequential_order() {
         let mut env = ExecutionEnvironment::default();
@@ -254,8 +253,14 @@ mod tests {
         );
         assert!(second.is_ok());
         let current = env.get("x");
-        assert_eq!(current.as_ref().map(|input| input.value.clone()), Some(StructuredValue::Real(20.0)));
-        assert_eq!(current.and_then(|input| input.producer), Some(BlockId("block-b".to_owned())));
+        assert_eq!(
+            current.as_ref().map(|input| input.value.clone()),
+            Some(StructuredValue::Real(20.0))
+        );
+        assert_eq!(
+            current.and_then(|input| input.producer),
+            Some(BlockId("block-b".to_owned()))
+        );
     }
 
     #[test]
