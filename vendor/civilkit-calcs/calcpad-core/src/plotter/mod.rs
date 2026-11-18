@@ -26,7 +26,7 @@ const STEPS: [f64; 4] = [1.0, 2.0, 2.5, 5.0];
 /// `Math.Round(x)` (banker's rounding)
 #[inline]
 pub(crate) fn round(x: f64) -> f64 {
-    x.round_ties_even()
+    crate::extension_methods::round_ties_even(x)
 }
 
 #[derive(Clone, Copy, Debug, Default)]
