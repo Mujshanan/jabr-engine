@@ -26,8 +26,11 @@ impl SourceSpan {
 #[derive(Clone, Debug, PartialEq)]
 pub enum StructuredValue {
     Real(f64),
+    ApproximateReal { value: f64, backend: String },
     Complex { re: f64, im: f64 },
+    ComplexQuantity { re: f64, im: f64, unit: String },
     Quantity { magnitude: f64, unit: String },
+    ApproximateQuantity { magnitude: f64, unit: String, backend: String },
     Vector(Vec<StructuredValue>),
     Matrix(Vec<Vec<StructuredValue>>),
     Boolean(bool),
@@ -92,6 +95,7 @@ pub trait DomainAdapter {
     fn evaluate(
         &self,
         source: &str,
+        analysis: &BlockAnalysis,
         inputs: &[BlockInput],
     ) -> Result<BlockEvaluation, Vec<Diagnostic>>;
 }
