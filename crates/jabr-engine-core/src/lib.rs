@@ -149,7 +149,7 @@ impl ExecutionEnvironment {
         let outputs: Vec<BlockOutput> = outputs.into_iter().collect();
         let mut names = BTreeSet::new();
         for output in &outputs {
-            if !names.insert(output.name.clone()) || self.definitions.contains_key(&output.name) {
+            if !names.insert(output.name.clone()) {
                 return Err(Diagnostic {
                     code: "JBR-ENGINE-DUPLICATE-DEFINITION".to_owned(),
                     message: format!("Duplicate worksheet definition: {}", output.name),
@@ -212,6 +212,31 @@ mod tests {
                 unit: "m".to_owned()
             })
         );
+    }
+
+
+    #[test]
+    fn later_blocks_reassign_existing_names_in_sequential_order() {
+        let mut env = ExecutionEnvironment::default();
+        let first = env.publish(
+            BlockId("block-a".to_owned()),
+            [BlockOutput {
+                name: "x".to_owned(),
+                value: StructuredValue::Real(5.0),
+            }],
+        );
+        assert!(first.is_ok());
+        let second = env.publish(
+            BlockId("block-b".to_owned()),
+            [BlockOutput {
+                name: "x".to_owned(),
+                value: StructuredValue::Real(20.0),
+            }],
+        );
+        assert!(second.is_ok());
+        let current = env.get("x");
+        assert_eq!(current.as_ref().map(|input| input.value.clone()), Some(StructuredValue::Real(20.0)));
+        assert_eq!(current.and_then(|input| input.producer), Some(BlockId("block-b".to_owned())));
     }
 
     #[test]
