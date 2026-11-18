@@ -80,8 +80,8 @@ impl<A: MathAnalysisProvider> DomainAdapter for CalcpadMathAdapter<A> {
             .iter()
             .map(|error| {
                 let generated_span = line_span(&generated.text, error.source_line);
-                let authored_span = generated_span
-                    .and_then(|span| map_authored_span(&generated, span));
+                let authored_span =
+                    generated_span.and_then(|span| map_authored_span(&generated, span));
                 Diagnostic {
                     code: "JBR-MATH-CALCPAD-ERROR".to_owned(),
                     message: error.message.clone(),
@@ -353,10 +353,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_names() {
-        let result = format_binding(&input(
-            "x; #include 'bad'",
-            StructuredValue::Real(1.0),
-        ));
+        let result = format_binding(&input("x; #include 'bad'", StructuredValue::Real(1.0)));
         assert!(result.is_err());
     }
 
