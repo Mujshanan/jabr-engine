@@ -110,7 +110,7 @@ The generated prefix is adapter-owned and is not authored document content.
 
 The adapter returns typed values, not display strings or HTML. The contract must support at minimum scalar numbers and quantities with units; vector and matrix support is required where the Jabr-Math contract and backend can represent them.
 
-Complex values, exact rational/decimal values, uncertainty/approximation tags, and unsupported backend values require explicit compatibility tests and documented conversion rules. Never silently lose precision or dimensional information.
+Calcpad real and complex outputs are tagged as approximate backend values, including unit-bearing complex quantities; vector and matrix elements preserve those tags recursively. Exact rational/decimal values and uncertainty metadata remain Jabr-Math responsibilities and require explicit compatibility rules. Never silently lose precision or dimensional information.
 
 ### 4.5 Source mapping
 
