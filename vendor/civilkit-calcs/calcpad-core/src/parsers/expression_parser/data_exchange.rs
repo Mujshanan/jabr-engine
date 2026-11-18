@@ -843,5 +843,7 @@ mod tests {
         assert_eq!(parse_bounds("R3C4", "R1C2").unwrap(), ((1, 2), (3, 4)));
         assert_eq!(base64_decode(&base64_encode(b"1,2\n3")).unwrap(), b"1,2\n3");
         assert_eq!(read_lines("a\r\nb\rc\n"), vec!["a", "b", "c"]);
+        assert_eq!(decode_text(&[0xFF, 0xFE, 0x41, 0x00]), "A");
+        assert_eq!(decode_text(&[0xFE, 0xFF, 0x00, 0x41]), "A");
     }
 }
