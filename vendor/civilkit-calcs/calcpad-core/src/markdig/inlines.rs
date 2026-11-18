@@ -433,7 +433,7 @@ impl<'a> InlineParser<'a> {
         }
         if n < desc.min {
             self.pos += n;
-            let t: String = std::iter::repeat_n(c, n).collect();
+            let t: String = std::iter::repeat(c).take(n).collect();
             self.text(&t);
             return true;
         }
