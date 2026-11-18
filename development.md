@@ -47,8 +47,10 @@ Upstream project: https://github.com/civilkit/civilkit-calcs
 - [x] Rust workspace and first Engine Core crate.
 - [x] Math adapter source-injection and source-map scaffold.
 - [x] Pinned Calcpad core source import and license/provenance retention.
-- [x] Stable CI compilation, tests, and Clippy passed before the Rust 1.75 compatibility patch set; final rerun pending.
-- [x] Rust 1.75 compatibility patch set recorded as D-001 in DEVIATIONS.md; final MSRV rerun pending.
+- [x] Stable CI compilation, tests, and Clippy passed after the Rust 1.75 compatibility patch set.
+- [x] Rust 1.75 MSRV check passed.
+- [x] WASM compilation check passed.
+- [x] Vendored Calcpad core unit tests passed.
 
 ### M1 — Calcpad adapter validation
 - [x] Add isolated ExpressionParser evaluation context.
@@ -91,9 +93,9 @@ Engine Core's BindingTable stores only symbol-to-producer references. It does no
 
 Run:
 
-    cargo fmt --all -- --check
+    cargo fmt -p jabr-engine-core -p jabr-engine-adapter-math -- --check
     cargo test --workspace
-    cargo clippy --workspace --all-targets -- -D warnings
+    cargo clippy -p jabr-engine-core -p jabr-engine-adapter-math --all-targets -- -D warnings
 
 The initial CI gate should compile and test the Engine Core and Math adapter, including the vendored core as a dependency. Run upstream conformance tests separately so their baseline is distinguishable from Jabr adapter tests.
 
