@@ -8,6 +8,7 @@ description = "Math-domain adapter contracts and Calcpad input-source bridge"
 
 [dependencies]
 jabr-engine-core = { path = "../jabr-engine-core" }
+calcpad_core = { package = "civilkit-calcs-engine", path = "../../vendor/civilkit-calcs/calcpad-core" }
 
 [lints]
 workspace = true
