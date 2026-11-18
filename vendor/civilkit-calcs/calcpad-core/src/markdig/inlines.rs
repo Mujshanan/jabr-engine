@@ -440,7 +440,7 @@ impl<'a> InlineParser<'a> {
         let nc = self.peek_at(start + n);
         let (can_open, can_close) = check_open_close_delimiter(pc, nc, desc.within_word);
         self.pos += n;
-        let t: String = std::iter::repeat_n(c, n).collect();
+        let t: String = std::iter::repeat(c).take(n).collect();
         let node = self.text(&t);
         if can_open || can_close {
             self.delims.push(Delim {
