@@ -138,47 +138,51 @@ pub fn visual_reading_order(blocks: &mut [WorksheetBlock]) {
     });
 }
 
-/// Transient environment containing exports from already executed blocks.
-#[derive(Clone, Debug, Default)]
-pub struct ExecutionEnvironment {
-    values: BTreeMap<String, (StructuredValue, BlockId)>,
-    definitions: BTreeMap<String, BlockId>,
+/// The producer of a named worksheet export. Values remain in Jabr Kernel state.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExportRef {
+    pub name: String,
+    pub producer: BlockId,
 }
 
-impl ExecutionEnvironment {
-    pub fn get(&self, name: &str) -> Option<BlockInput> {
-        self.values.get(name).map(|(value, producer)| BlockInput {
-            name: name.to_owned(),
-            value: value.clone(),
-            producer: Some(producer.clone()),
-        })
+/// Engine-owned name-to-producer binding table. It never stores variable values or snapshots;
+/// those remain Kernel-owned and are fetched when an adapter evaluation needs an input.
+#[derive(Clone, Debug, Default)]
+pub struct BindingTable {
+    exports: BTreeMap<String, ExportRef>,
+}
+
+impl BindingTable {
+    pub fn resolve(&self, name: &str) -> Option<&ExportRef> {
+        self.exports.get(name)
     }
 
-    pub fn contains(&self, name: &str) -> bool {
-        self.values.contains_key(name)
-    }
-
+    /// Publish names declared by a successfully analyzed block. A later sequential assignment
+    /// to an existing name updates its producer; duplicate names within one block are rejected.
     pub fn publish(
         &mut self,
         block_id: BlockId,
-        outputs: impl IntoIterator<Item = BlockOutput>,
+        definitions: impl IntoIterator<Item = Definition>,
     ) -> Result<(), Diagnostic> {
-        let outputs: Vec<BlockOutput> = outputs.into_iter().collect();
+        let definitions: Vec<Definition> = definitions.into_iter().collect();
         let mut names = BTreeSet::new();
-        for output in &outputs {
-            if !names.insert(output.name.clone()) {
+        for definition in &definitions {
+            if !names.insert(definition.name.clone()) {
                 return Err(Diagnostic {
                     code: "JBR-ENGINE-DUPLICATE-DEFINITION".to_owned(),
-                    message: format!("Duplicate worksheet definition: {}", output.name),
-                    span: None,
+                    message: format!("Duplicate worksheet definition: {}", definition.name),
+                    span: Some(definition.span),
                 });
             }
         }
-        for output in outputs {
-            self.definitions
-                .insert(output.name.clone(), block_id.clone());
-            self.values
-                .insert(output.name, (output.value, block_id.clone()));
+        for definition in definitions {
+            self.exports.insert(
+                definition.name.clone(),
+                ExportRef {
+                    name: definition.name,
+                    producer: block_id.clone(),
+                },
+            );
         }
         Ok(())
     }
@@ -211,75 +215,69 @@ mod tests {
     }
 
     #[test]
-    fn environment_publishes_and_resolves_structured_values() {
-        let mut env = ExecutionEnvironment::default();
-        let published = env.publish(
+    fn binding_table_resolves_export_producers_without_storing_values() {
+        let mut bindings = BindingTable::default();
+        let published = bindings.publish(
             BlockId("block-a".to_owned()),
-            [BlockOutput {
+            [Definition {
                 name: "x".to_owned(),
-                value: StructuredValue::Quantity {
-                    magnitude: 5.0,
-                    unit: "m".to_owned(),
-                },
+                span: SourceSpan { start: 0, end: 1 },
             }],
         );
         assert!(published.is_ok());
         assert_eq!(
-            env.get("x").map(|input| input.value),
-            Some(StructuredValue::Quantity {
-                magnitude: 5.0,
-                unit: "m".to_owned()
+            bindings.resolve("x"),
+            Some(&ExportRef {
+                name: "x".to_owned(),
+                producer: BlockId("block-a".to_owned()),
             })
         );
     }
 
     #[test]
     fn later_blocks_reassign_existing_names_in_sequential_order() {
-        let mut env = ExecutionEnvironment::default();
-        let first = env.publish(
+        let mut bindings = BindingTable::default();
+        let first = bindings.publish(
             BlockId("block-a".to_owned()),
-            [BlockOutput {
+            [Definition {
                 name: "x".to_owned(),
-                value: StructuredValue::Real(5.0),
+                span: SourceSpan { start: 0, end: 1 },
             }],
         );
         assert!(first.is_ok());
-        let second = env.publish(
+        let second = bindings.publish(
             BlockId("block-b".to_owned()),
-            [BlockOutput {
+            [Definition {
                 name: "x".to_owned(),
-                value: StructuredValue::Real(20.0),
+                span: SourceSpan { start: 0, end: 1 },
             }],
         );
         assert!(second.is_ok());
-        let current = env.get("x");
         assert_eq!(
-            current.as_ref().map(|input| input.value.clone()),
-            Some(StructuredValue::Real(20.0))
-        );
-        assert_eq!(
-            current.and_then(|input| input.producer),
-            Some(BlockId("block-b".to_owned()))
+            bindings.resolve("x"),
+            Some(&ExportRef {
+                name: "x".to_owned(),
+                producer: BlockId("block-b".to_owned()),
+            })
         );
     }
 
     #[test]
     fn duplicate_exports_are_rejected_without_partial_publish() {
-        let mut env = ExecutionEnvironment::default();
-        let result = env.publish(
+        let mut bindings = BindingTable::default();
+        let result = bindings.publish(
             BlockId("block-a".to_owned()),
             [
-                BlockOutput {
+                Definition {
                     name: "x".to_owned(),
-                    value: StructuredValue::Real(1.0),
+                    span: SourceSpan { start: 0, end: 1 },
                 },
-                BlockOutput {
+                Definition {
                     name: "x".to_owned(),
-                    value: StructuredValue::Real(2.0),
+                    span: SourceSpan { start: 4, end: 5 },
                 },
             ],
         );
         assert!(result.is_err());
-        assert!(!env.contains("x"));
-    }
-}
+        assert!(bindings.resolve("x").is_none());
+    }}
