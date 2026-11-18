@@ -304,14 +304,13 @@ fn decode_text(bytes: &[u8]) -> String {
     }
     let utf16 = |b: &[u8], le: bool| {
         let units: Vec<u16> = b
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|&c| {
+            .chunks_exact(2)
+            .map(|chunk| {
+                let pair = [chunk[0], chunk[1]];
                 if le {
-                    u16::from_le_bytes(c)
+                    u16::from_le_bytes(pair)
                 } else {
-                    u16::from_be_bytes(c)
+                    u16::from_be_bytes(pair)
                 }
             })
             .collect();
