@@ -19,8 +19,8 @@ jobs:
       - name: Check out Jabr Engine
         uses: actions/checkout@v4
         with:
-          ref: \${{ github.ref_name }}
-          token: \${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import pinned upstream source
         run: bash scripts/vendor-calcpad.sh
@@ -35,4 +35,4 @@ jobs:
             exit 0
           fi
           git commit -m "vendor: import CivilKit Calcpad core at a348ab7"
-          git push origin "HEAD:\${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
