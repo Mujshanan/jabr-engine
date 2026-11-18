@@ -4,9 +4,9 @@
 
 Jabr Engine is an independent Rust repository. It is developed and tested independently from Jabr-UI, Jabr-Math, Jabr-Kernel, Jabr-Table, and Jabr-Diagram. Do not create a cross-repository Cargo workspace.
 
-The first integration target is the Rust Calcpad calculation core from CivilKit Calcs. It is a backend, not the Jabr worksheet interpreter and not the owner of Jabr variable state.
+The first calculation backend is the Rust Calcpad core from CivilKit Calcs. It is a backend, not the Jabr worksheet interpreter and not the owner of Jabr variable state.
 
-## Repository layout (target)
+## Repository layout
 
     crates/
       jabr-engine-core/
@@ -19,52 +19,51 @@ The first integration target is the Rust Calcpad calculation core from CivilKit 
     vendor/
       civilkit-calcs/
         calcpad-core/
+    scripts/
+      vendor-calcpad.sh
     tests/
       fixtures/
       conformance/
-    Cargo.toml
-    DEVELOPMENT.md
-    SPECIFICATIONS.md
-    DEVIATIONS.md
-
-Only crates needed for a milestone should be created. The initial implementation starts with Engine Core and the Math adapter contract.
 
 ## Upstream source and vendoring
 
 Upstream project: https://github.com/civilkit/civilkit-calcs
 
-- Initial import revision target: a348ab70bc2354386cb1e9f4a80246425f8304f0.
+- Imported revision: a348ab70bc2354386cb1e9f4a80246425f8304f0.
+- Upstream project version at the imported revision: 26.11.4.
 - Source component: calcpad-core (Rust library crate name: calcpad_core).
 - Upstream package name: civilkit-calcs-engine.
-- Preserve upstream LICENSE, NOTICE, and relevant third-party notices.
-- Do not use a Git submodule or runtime Git dependency: the intended result is source vendored inside this repository.
-- Do not copy the CivilKit web application, CLI, unrelated export crates, or UI. Start with the calculation core and add more only when a Jabr requirement proves necessary.
+- The full calcpad-core source, tests, examples, LICENSE, NOTICE, upstream DEVIATIONS, and PORT_LOG are committed under vendor/civilkit-calcs/.
+- This is a source vendor import, not a Git submodule or runtime Git dependency.
+- The vendor import script is scripts/vendor-calcpad.sh. It downloads only the pinned revision and refuses to overwrite an existing vendor tree.
+- Do not copy the CivilKit web application, CLI, unrelated export crates, or UI.
 - Keep upstream structure recognizable. Avoid broad renames and mechanical refactors.
-- Every Jabr-specific source modification must have a matching DEVIATIONS.md entry, rationale, and regression test.
-
-The vendor import is incomplete until the full calcpad-core source tree, required manifests/assets, upstream notices, and relevant tests are present and the vendored crate builds from a local path. The initial scaffold does not claim that import is complete.
+- Every Jabr-specific source modification must have a matching root DEVIATIONS.md entry, rationale, and regression test.
 
 ## Development milestones
 
 ### M0 — Repository foundation
-- Document architecture, scope, constraints, and development gates.
-- Establish a Rust workspace and first Engine Core crate.
-- Define stable block, analysis, value, span, diagnostic, and adapter contracts.
-- Keep the public protocol versioned.
+- [x] Architecture, scope, and development gates documented.
+- [x] Rust workspace and first Engine Core crate.
+- [x] Math adapter source-injection and source-map scaffold.
+- [x] Pinned Calcpad core source import and license/provenance retention.
+- [ ] CI compilation and tests.
 
-### M1 — Calcpad source import
-- Import the pinned CivilKit calcpad-core source into vendor/civilkit-calcs/calcpad-core.
-- Preserve license and provenance.
-- Make the crate build locally without a network dependency.
-- Record baseline upstream test status before Jabr patches.
+### M1 — Calcpad adapter validation
+- [x] Add isolated ExpressionParser evaluation context.
+- [x] Disable host file reads/writes for block evaluation.
+- [x] Inject resolved inputs as synthetic assignments.
+- [x] Extract declared outputs as structured values.
+- [ ] Validate scalar and quantity round trips against Calcpad.
+- [ ] Validate vector/matrix and complex result conversion.
+- [ ] Validate parser diagnostics and source-line mapping.
+- [ ] Validate native and WASM behavior.
 
-### M2 — Math adapter proof of concept
-- Use the Jabr-Math facade for names-defined/read and source spans.
-- Materialize resolved inputs as synthetic Calcpad assignments before each block source.
-- Evaluate each block in an isolated parser context.
-- Extract only declared outputs as structured Jabr values.
-- Map diagnostics back to original authored spans.
-- Do not make Calcpad's variable map authoritative.
+### M2 — Jabr-Math integration
+- Connect the adapter's MathAnalysisProvider to the real Jabr-Math public facade.
+- Confirm names-defined/read and stable span contracts.
+- Confirm function definitions and provider callbacks.
+- Preserve exact decimal/rational values in Jabr-Math; tag Calcpad f64 results as approximate.
 
 ### M3 — Engine execution semantics
 - Implement deterministic visual reading order.
@@ -91,14 +90,24 @@ Run:
     cargo test --workspace
     cargo clippy --workspace --all-targets -- -D warnings
 
-After vendoring, add explicit checks for native and WASM builds, selected MSRV, no network dependency, upstream conformance tests, Jabr deviation tests, input injection, structured value round trips, source-map stability, isolation, reassignment, and diagnostics.
+The initial CI gate should compile and test the Engine Core and Math adapter, including the vendored core as a dependency. Run upstream conformance tests separately so their baseline is distinguishable from Jabr adapter tests.
+
+Required adapter tests:
+- Input injection with unit-bearing values.
+- Structured scalar/vector/matrix/complex result conversion.
+- Source-map stability with multiple synthetic assignments.
+- Isolation across independent block evaluations.
+- Reassignment and result-history behavior.
+- Diagnostics mapped to authored spans.
+- No filesystem access from worksheet blocks.
 
 ## Engineering rules
 
 - Adapters analyze a domain block, receive explicit inputs, and return structured outputs and diagnostics.
 - Avoid unwrap, expect, and panic in production paths.
-- No global mutable parser instance. Calcpad's parser is stateful and not Send/Sync; confine each parser instance to its evaluation context/thread.
+- No global mutable parser instance. Calcpad's parser is stateful and uses Rc/RefCell; confine each parser instance to its evaluation context/thread.
+- Native ExpressionParser defaults to local disk access. The Jabr adapter must always install NoFiles and disable data writes.
 - Never return Calcpad HTML/text as the semantic result.
-- Never silently coerce an unsupported Jabr value to a string or floating-point approximation.
-- Every behavior change to vendored code requires a DEVIATIONS entry and a test.
+- Never silently coerce an unsupported Jabr value to a string or floating-point approximation. Backend approximate values must be tagged.
+- Every behavior change to vendored source requires a DEVIATIONS entry and a test.
 - Keep commits small and milestone-scoped. Do not merge a pull request without explicit authorization.
