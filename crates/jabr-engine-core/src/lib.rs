@@ -39,6 +39,17 @@ pub enum StructuredValue {
         im: f64,
         unit: String,
     },
+    ApproximateComplex {
+        re: f64,
+        im: f64,
+        backend: String,
+    },
+    ApproximateComplexQuantity {
+        re: f64,
+        im: f64,
+        unit: String,
+        backend: String,
+    },
     Quantity {
         magnitude: f64,
         unit: String,
