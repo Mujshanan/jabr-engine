@@ -280,4 +280,5 @@ mod tests {
         );
         assert!(result.is_err());
         assert!(bindings.resolve("x").is_none());
-    }}
+    }
+}
