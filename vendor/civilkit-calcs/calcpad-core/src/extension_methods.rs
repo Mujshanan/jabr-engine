@@ -238,6 +238,48 @@ pub fn replace_c_style_operators(s: &str) -> String {
     sb.into_iter().collect()
 }
 
+/// Rust 1.75-compatible IEEE-754 round-to-nearest, ties-to-even.
+pub fn round_ties_even(value: f64) -> f64 {
+    if !value.is_finite() || value == 0.0 {
+        return value;
+    }
+
+    let lower = value.floor();
+    let fraction = value - lower;
+    let rounded = if fraction < 0.5 {
+        lower
+    } else if fraction > 0.5 {
+        lower + 1.0
+    } else if lower % 2.0 == 0.0 {
+        lower
+    } else {
+        lower + 1.0
+    };
+
+    if rounded == 0.0 && value.is_sign_negative() {
+        -0.0
+    } else {
+        rounded
+    }
+}
+
+/// Rust 1.75-compatible next representable f64 toward positive infinity.
+pub fn next_up(value: f64) -> f64 {
+    if value.is_nan() || value == f64::INFINITY {
+        return value;
+    }
+    if value == 0.0 {
+        return f64::from_bits(1);
+    }
+
+    let bits = value.to_bits();
+    if value.is_sign_positive() {
+        f64::from_bits(bits + 1)
+    } else {
+        f64::from_bits(bits - 1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -270,4 +312,27 @@ mod tests {
         assert_eq!(enumerate_lines("a\nb\n"), vec!["a", "b"]);
         assert_eq!(enumerate_lines("a\r\nb"), vec!["a", "b"]);
     }
+    #[test]
+    fn ties_to_even_matches_ieee_halfway_rules() {
+        assert_eq!(round_ties_even(2.5), 2.0);
+        assert_eq!(round_ties_even(3.5), 4.0);
+        assert_eq!(round_ties_even(-2.5), -2.0);
+        assert_eq!(round_ties_even(-3.5), -4.0);
+        assert_eq!(round_ties_even(1.6), 2.0);
+        assert!(round_ties_even(-0.5).is_sign_negative());
+        assert_eq!(round_ties_even(f64::INFINITY), f64::INFINITY);
+        assert!(round_ties_even(f64::NAN).is_nan());
+    }
+
+    #[test]
+    fn next_up_handles_finite_values_zero_and_non_finite_values() {
+        assert_eq!(next_up(0.0), f64::from_bits(1));
+        assert_eq!(next_up(-0.0), f64::from_bits(1));
+        assert!(next_up(1.0) > 1.0);
+        assert!(next_up(-1.0) > -1.0);
+        assert_eq!(next_up(f64::NEG_INFINITY), -f64::MAX);
+        assert_eq!(next_up(f64::INFINITY), f64::INFINITY);
+        assert!(next_up(f64::NAN).is_nan());
+    }
+
 }
