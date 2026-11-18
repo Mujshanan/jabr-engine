@@ -900,7 +900,7 @@ impl ExpressionParser {
         let r = p.parse(expression, false).and_then(|_| p.calculate(false, -1));
         match r {
             Ok(()) => {
-                let n = p.real().round_ties_even();
+                let n = crate::extension_methods::round_ties_even(p.real());
                 if n > 0.0 && n < i32::MAX as f64 {
                     n as i32
                 } else {
