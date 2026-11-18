@@ -23,7 +23,7 @@ The Jabr Math adapter uses public APIs from the vendored crate. Its behavior is 
 
 ### D-001 — Restore Rust 1.75 compatibility
 
-- **Upstream files:** calcpad-core/src/base_types/unit.rs; calcpad-core/src/base_types/real_value.rs (only if required by the compatibility implementation); calcpad-core/src/extension_methods.rs; calcpad-core/src/matrix/matrix_solvers.rs; calcpad-core/src/netfmt.rs; calcpad-core/src/plotter/mod.rs; calcpad-core/src/markdig/inlines.rs; calcpad-core/src/parsers/expression_parser/data_exchange.rs.
+- **Upstream files:** calcpad-core/src/base_types/unit.rs; calcpad-core/src/extension_methods.rs; calcpad-core/src/matrix/matrix_solvers.rs; calcpad-core/src/netfmt.rs; calcpad-core/src/plotter/mod.rs; calcpad-core/src/markdig/inlines.rs; calcpad-core/src/parsers/expression_parser/data_exchange.rs.
 - **Upstream behavior:** Uses standard-library APIs newer than the Jabr Kernel-aligned Rust 1.75 baseline, including inline const expressions, iter::repeat_n, Rc::new_uninit, f64::round_ties_even, f64::next_up, and slice::as_chunks.
 - **Jabr behavior:** Replace these APIs with Rust 1.75-compatible equivalents. Use std::array::from_fn for Cell arrays, repeat(...).take(...) for repeated characters, a safe Rc::new(Unit::blank(...)) construction, compatibility helpers for ties-to-even rounding and next-up, and chunks_exact(2) for UTF-16 decoding.
 - **Reason:** Preserve the previously selected Rust 1.75 MSRV matching Jabr Kernel without changing upstream numerical or parsing semantics.
