@@ -668,11 +668,11 @@ pub fn round_even_digits(x: f64, digits: i32) -> f64 {
         return x;
     }
     if digits == 0 {
-        return x.round_ties_even();
+        return crate::extension_methods::round_ties_even(x);
     }
     let power10 = 10f64.powi(digits);
     let v = x * power10;
-    let r = v.round_ties_even();
+    let r = crate::extension_methods::round_ties_even(v);
     // .NET: if (Math.Abs(value) < 1e16) { value *= power10; value = Round(value); value /= power10 }
     if x.abs() < 1e16 {
         r / power10
