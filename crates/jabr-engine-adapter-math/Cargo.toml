@@ -1,0 +1,13 @@
+[package]
+name = "jabr-engine-adapter-math"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Math-domain adapter contracts and Calcpad input-source bridge"
+
+[dependencies]
+jabr-engine-core = { path = "../jabr-engine-core" }
+
+[lints]
+workspace = true
