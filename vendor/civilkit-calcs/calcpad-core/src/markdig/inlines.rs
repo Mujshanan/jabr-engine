@@ -423,6 +423,7 @@ impl<'a> InlineParser<'a> {
         self.text(&t);
     }
 
+    #[allow(clippy::manual_repeat_n)]
     fn handle_delim(&mut self, c: char) -> bool {
         let desc = descriptor(self.pipeline, c).unwrap();
         let start = self.pos;
