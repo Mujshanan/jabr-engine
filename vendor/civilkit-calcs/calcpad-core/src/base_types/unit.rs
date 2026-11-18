@@ -236,7 +236,7 @@ impl Unit {
             n: u.n,
             pid: u.pid,
             pw: u.pw,
-            fc: [const { Cell::new(0.0) }; MAX_DIMS],
+            fc: std::array::from_fn(|_| Cell::new(0.0)),
         };
         for i in 0..u.n as usize {
             c.fc[i].set(u.fc[i].get());
@@ -253,7 +253,7 @@ impl Unit {
             n: u.n,
             pid: u.pid,
             pw: u.pw,
-            fc: [const { Cell::new(0.0) }; MAX_DIMS],
+            fc: std::array::from_fn(|_| Cell::new(0.0)),
         };
         for i in 0..u.n as usize {
             c.fc[i].set(u.fc[i].get());
@@ -1259,7 +1259,7 @@ fn norm_dim(factor: f64, name: &str) -> f64 {
             } else {
                 let a = factor / 2.54e-05;
                 if near_int(a) {
-                    let a = a.round_ties_even();
+                    let a = crate::extension_methods::round_ties_even(a);
                     if [1.0, 1000.0, 36000.0, 792000.0, 7920000.0, 63360000.0].contains(&a) {
                         return 1.0;
                     } else {
@@ -1274,7 +1274,7 @@ fn norm_dim(factor: f64, name: &str) -> f64 {
             }
             let a = std::f64::consts::PI / factor;
             if near_int(a) {
-                let b = a.round_ties_even();
+                let b = crate::extension_methods::round_ties_even(a);
                 if b == 180.0 || b == 200.0 || b == 10800.0 || b == 648000.0 {
                     return 1.0;
                 } else {
@@ -1322,7 +1322,7 @@ fn get_dim_text(writer: &dyn OutputWriter, name: &str, factor: f64, power: f32) 
                     if a2 < 1.0 {
                         let a3 = 1.0 / a2;
                         if near_int(a3) {
-                            let a3 = a3.round_ties_even();
+                            let a3 = crate::extension_methods::round_ties_even(a3);
                             factor = 1.0;
                             match a3 as i64 {
                                 7000 => name = "gr".to_string(),
@@ -1335,7 +1335,7 @@ fn get_dim_text(writer: &dyn OutputWriter, name: &str, factor: f64, power: f32) 
                             }
                         }
                     } else if near_int(a2) {
-                        let a2 = a2.round_ties_even();
+                        let a2 = crate::extension_methods::round_ties_even(a2);
                         factor = 1.0;
                         match a2 as i64 {
                             14 => name = "st".to_string(),
@@ -1366,7 +1366,7 @@ fn get_dim_text(writer: &dyn OutputWriter, name: &str, factor: f64, power: f32) 
                 } else {
                     let a = factor / 2.54e-05;
                     if near_int(a) {
-                        let a = a.round_ties_even();
+                        let a = crate::extension_methods::round_ties_even(a);
                         factor = 1.0;
                         match a as i64 {
                             1 => name = "th".to_string(),
@@ -1390,7 +1390,7 @@ fn get_dim_text(writer: &dyn OutputWriter, name: &str, factor: f64, power: f32) 
                 } else {
                     let a = std::f64::consts::PI / factor;
                     if near_int(a) {
-                        let b = a.round_ties_even();
+                        let b = crate::extension_methods::round_ties_even(a);
                         factor = 1.0;
                         match b as i64 {
                             180 => name = "deg".to_string(),
