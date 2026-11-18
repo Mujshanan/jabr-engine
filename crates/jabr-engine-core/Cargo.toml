@@ -1,0 +1,12 @@
+[package]
+name = "jabr-engine-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Jabr worksheet execution and cross-block orchestration core"
+
+[dependencies]
+
+[lints]
+workspace = true
