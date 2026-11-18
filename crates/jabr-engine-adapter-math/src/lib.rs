@@ -418,10 +418,9 @@ mod tests {
                         assert_eq!(unit, "m");
                         assert_eq!(backend, "civilkit-calcpad");
                     }
-                    _ => {},
+                    _ => {}
                 }
             }
         }
     }
-
 }
