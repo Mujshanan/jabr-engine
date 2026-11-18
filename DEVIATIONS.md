@@ -15,7 +15,7 @@ This file tracks every Jabr-specific modification to source imported from CivilK
 
 ## Import status
 
-**Source import complete.** The complete calcpad-core crate, its tests and examples, and upstream provenance/licensing files are committed under vendor/civilkit-calcs/. The imported source has not been modified by Jabr yet.
+**Source import complete.** The complete calcpad-core crate, its tests and examples, and upstream provenance/licensing files are committed under vendor/civilkit-calcs/. The only Jabr-specific source changes are the Rust 1.75 compatibility patches recorded in D-001.
 
 The Jabr Math adapter uses public APIs from the vendored crate. Its behavior is implemented outside vendor/ wherever possible. The adapter creates a fresh ExpressionParser for each block evaluation, uses NoFiles, disables data writes, injects synthetic bound assignments, and reads only the outputs declared by Jabr-Math analysis.
 
