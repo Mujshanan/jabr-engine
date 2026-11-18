@@ -298,6 +298,7 @@ impl ReadWriteOptions {
 // ----- DataExchange --------------------------------------------------------------------------
 
 /// `StreamReader` decoding: a BOM picks UTF-8 or UTF-16, otherwise UTF-8.
+#[allow(clippy::chunks_exact_to_as_chunks)]
 fn decode_text(bytes: &[u8]) -> String {
     if let Some(b) = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]) {
         return String::from_utf8_lossy(b).to_string();
